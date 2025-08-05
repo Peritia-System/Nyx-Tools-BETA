@@ -7,7 +7,7 @@
   ################################################################
 
   imports = [
-    # Other Home Manager Modules
+    # Other Home Manager Modules 
     # ......
     inputs.nyx.homeManagerModules.default
   ];
