@@ -205,4 +205,6 @@ if [[ "$auto_push" == "true" ]]; then
   git push && echo "''${GREEN}✅ Changes pushed to remote.''${RESET}"
 fi
 
-echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${R
+echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
+  finish_nyx_rebuild
+  #return $exit_code
