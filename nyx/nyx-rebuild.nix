@@ -2,8 +2,7 @@
 
 let
   cfg = config.nyx.nyx-rebuild;
-  nixDirStr = toString cfg.nixDirectory;
-  logDirDefault = "/home/${username}/.nyx/nyx-cleanup/logs";
+  logDirDefault = "/home/${toString cfg.username}/.nyx/nyx-rebuild/logs";
 in
 
 {
