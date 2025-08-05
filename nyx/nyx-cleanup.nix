@@ -74,7 +74,7 @@ in {
         # === LOGGING ===
         mkdir -p "$log_dir"
         timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
-        cleanup_log="$log_dir/cleanup-${timestamp}.log"
+        cleanup_log="$log_dir/cleanup-''${timestamp}.log"
 
         console-log() {
           echo -e "$@" | tee -a "$cleanup_log"
@@ -82,60 +82,60 @@ in {
 
         print_line() {
           console-log ""
-          console-log "${BOLD}==================================================${RESET}"
+          console-log "''${BOLD}==================================================''${RESET}"
           console-log ""
         }
 
         finish_cleanup() {
           duration=$(( $(date +%s) - start_time ))
           if [[ "$cleanup_success" == true ]]; then
-            echo -e "${GREEN}${BOLD}
+            echo -e "''${GREEN}''${BOLD}
 ##############################
 # ✅ Nyx Cleanup Complete!   #
-##############################${RESET}"
-            echo -e "${CYAN}${BOLD}📋 Stats:${RESET}"
+##############################''${RESET}"
+            echo -e "''${CYAN}''${BOLD}📋 Stats:''${RESET}"
             echo "  🕒 Started:   $start_human"
-            echo "  ⏱️  Duration: ${duration} sec"
+            echo "  ⏱️  Duration: ''${duration} sec"
           else
-            echo -e "${RED}${BOLD}
+            echo -e "''${RED}''${BOLD}
 ##############################
 # ❌ Nyx Cleanup Failed!     #
-##############################${RESET}"
+##############################''${RESET}"
             echo "  🕒 Started:   $start_human"
-            echo "  ⏱️  Duration: ${duration} sec"
+            echo "  ⏱️  Duration: ''${duration} sec"
           fi
         }
 
         trap finish_cleanup EXIT
 
         print_line
-        console-log "${BLUE}${BOLD}🧹 Starting cleanup...${RESET}"
+        console-log "''${BLUE}''${BOLD}🧹 Starting cleanup...''${RESET}"
 
         # === REMOVE OLD LOGS ===
-        console-log "${CYAN}${BOLD}🗑️  Removing logs older than 30 days...${RESET}"
+        console-log "''${CYAN}''${BOLD}🗑️  Removing logs older than 30 days...''${RESET}"
         find "$log_dir" -type f -mtime +30 -print -delete
 
         # === REMOVE HOME MANAGER BACKUPS ===
         print_line
-        console-log "${CYAN}${BOLD}📁 Deleting Home Manager backup files...${RESET}"
+        console-log "''${CYAN}''${BOLD}📁 Deleting Home Manager backup files...''${RESET}"
         find ~ -type f -name '*delme-HMbackup' -print -delete
 
         # === GARBAGE COLLECTION ===
         print_line
-        console-log "${MAGENTA}${BOLD}🧼 Running Nix garbage collection...${RESET}"
+        console-log "''${MAGENTA}''${BOLD}🧼 Running Nix garbage collection...''${RESET}"
         sudo nix-collect-garbage -d | tee -a "$cleanup_log"
 
         # === GIT SETUP ===
         print_line
         if [[ ! -d "$repo_dir/.git" ]]; then
-          console-log "${YELLOW}⚠️ No git repo in: $repo_dir. Initializing...${RESET}"
+          console-log "''${YELLOW}⚠️ No git repo in: $repo_dir. Initializing...''${RESET}"
           "$git_bin" -C "$repo_dir" init | tee -a "$cleanup_log"
         fi
 
         # === GIT AUTO PUSH ===
         if [[ "$auto_push" == "true" ]]; then
           print_line
-          console-log "${BLUE}${BOLD}🚀 Auto-pushing git commits in $repo_dir...${RESET}"
+          console-log "''${BLUE}''${BOLD}🚀 Auto-pushing git commits in $repo_dir...''${RESET}"
           cd "$repo_dir"
 
           if "$git_bin" remote | grep -q .; then
@@ -143,8 +143,8 @@ in {
             "$git_bin" commit -m "chore(cleanup): auto cleanup $(date)" || true
             "$git_bin" push
           else
-            console-log "${YELLOW}⚠️ No git remote configured. Skipping push.${RESET}"
-            console-log "${YELLOW}📂 Check logs in: $log_dir${RESET}"
+            console-log "''${YELLOW}⚠️ No git remote configured. Skipping push.''${RESET}"
+            console-log "''${YELLOW}📂 Check logs in: $log_dir''${RESET}"
           fi
         fi
 
@@ -152,7 +152,7 @@ in {
         exit_code=0
 
         print_line
-        console-log "${GREEN}🎉 Cleanup finished successfully!${RESET}"
+        console-log "''${GREEN}🎉 Cleanup finished successfully!''${RESET}"
         print_line
         }
         nyx-cleanup
