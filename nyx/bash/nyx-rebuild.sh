@@ -11,7 +11,6 @@ formatter_cmd="''${FORMATTER_CMD:-alejandra}"
 auto_push="''${AUTO_PUSH:-false}"
 
 # === INITIAL SETUP ===
-version="1.3.0"
 start_time=$(date +%s)
 start_human=$(date '+%Y-%m-%d %H:%M:%S')
 stats_duration=0
