@@ -58,7 +58,7 @@ in
     programs.zsh.enable = lib.mkDefault true;
 
     home.packages = [
-      # The nyx-rebuild command itself
+      
       (pkgs.writeShellScriptBin "nyx-rebuild" ''
         #!/usr/bin/env bash
 
@@ -73,16 +73,16 @@ in
         enable_formatting="${toString cfg.enableFormatting}"
         auto_push="${toString cfg.autoPush}"
 
-        log_dir="$nix_dir/Misc/nyx/logs/$(hostname)"
-        mkdir -p "$log_dir"
-        timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
-        build_log="$log_dir/build-${timestamp}.log"
-        error_log="$log_dir/Current-Error-${timestamp}.txt"
+        log_dir="\${nix_dir}/Misc/nyx/logs/\$(hostname)"
+        mkdir -p "\${log_dir}"
+        timestamp="\$(date '+%Y-%m-%d_%H-%M-%S')"
+        build_log="\${log_dir}/build-\${timestamp}.log"
+        error_log="\${log_dir}/Current-Error-\${timestamp}.txt"
 
         rebuild_success=false
         exit_code=1
-        start_time=$(date +%s)
-        start_human=$(date '+%Y-%m-%d %H:%M:%S')
+        start_time=\$(date +%s)
+        start_human="\$(date '+%Y-%m-%d %H:%M:%S')"
         stats_gen="?"
         stats_errors=0
         stats_last_error_lines=""
@@ -99,86 +99,86 @@ in
         fi
 
         console-log() {
-          echo -e "$@" | tee -a "$build_log"
+          echo -e "$@" | tee -a "\${build_log}"
         }
 
         run_with_log() {
           local output
-          output=$(mktemp)
+          output=\$(mktemp)
           (
-            "$@" 2>&1
-            echo $? > "$output"
-          ) | tee -a "$build_log"
+            "\$@" 2>&1
+            echo \$? > "\$output"
+          ) | tee -a "\${build_log}"
           local status
-          status=$(<"$output")
-          rm "$output"
-          return "$status"
+          status=\$(<"\$output")
+          rm "\$output"
+          return "\$status"
         }
 
         finish_nyx_rebuild() {
-          local duration=$(( $(date +%s) - start_time ))
+          local duration=\$(( \$(date +%s) - start_time ))
           echo
-          if [[ "$rebuild_success" == true ]]; then
-            echo "${GREEN}${BOLD}✅ NixOS Rebuild Complete!${RESET}"
-            echo "${CYAN}Started: $start_human | Duration: ${duration}s | Gen: $stats_gen${RESET}"
+          if [[ "\${rebuild_success}" == true ]]; then
+            echo "\${GREEN}\${BOLD}✅ NixOS Rebuild Complete!\${RESET}"
+            echo "\${CYAN}Started: \${start_human} | Duration: \${duration}s | Gen: \${stats_gen}\${RESET}"
           else
-            echo "${RED}${BOLD}❌ NixOS Rebuild Failed!${RESET}"
-            echo "${YELLOW}Started: $start_human | Duration: ${duration}s${RESET}"
-            [[ -n "$stats_last_error_lines" ]] && echo "${YELLOW}Last Errors:\n$stats_last_error_lines${RESET}"
+            echo "\${RED}\${BOLD}❌ NixOS Rebuild Failed!\${RESET}"
+            echo "\${YELLOW}Started: \${start_human} | Duration: \${duration}s\${RESET}"
+            [[ -n "\${stats_last_error_lines}" ]] && echo "\${YELLOW}Last Errors:\n\${stats_last_error_lines}\${RESET}"
           fi
-          return $exit_code
+          return \${exit_code}
         }
 
-        cd "$nix_dir" || exit 1
+        cd "\${nix_dir}" || exit 1
 
-        console-log "${BLUE}${BOLD}📁 Checking Git status...${RESET}"
-        if [[ -n $(git status --porcelain) ]]; then
-          echo "${YELLOW}⚠️ Uncommitted changes! Waiting 5s to cancel...${RESET}"
+        console-log "\${BLUE}\${BOLD}📁 Checking Git status...\${RESET}"
+        if [[ -n \$(git status --porcelain) ]]; then
+          echo "\${YELLOW}⚠️ Uncommitted changes! Waiting 5s to cancel...\${RESET}"
           sleep 5
         fi
 
-        console-log "\n${BLUE}⬇️ Pulling latest changes...${RESET}"
+        console-log "\n\${BLUE}⬇️ Pulling latest changes...\${RESET}"
         run_with_log git pull --rebase || exit 1
 
-        if [[ "$start_editor" == "true" ]]; then
-          console-log "\n${BLUE}📝 Opening editor...${RESET}"
-          run_with_log "$editor_cmd"
+        if [[ "\${start_editor}" == "true" ]]; then
+          console-log "\n\${BLUE}📝 Opening editor...\${RESET}"
+          run_with_log "\${editor_cmd}"
         fi
 
-        if [[ "$enable_formatting" == "true" ]]; then
-          console-log "\n${MAGENTA}🎨 Formatting files...${RESET}"
-          run_with_log "$formatter_cmd" .
+        if [[ "\${enable_formatting}" == "true" ]]; then
+          console-log "\n\${MAGENTA}🎨 Formatting files...\${RESET}"
+          run_with_log "\${formatter_cmd}" .
         fi
 
-        console-log "\n${CYAN}🔍 Git diff summary:${RESET}"
+        console-log "\n\${CYAN}🔍 Git diff summary:\${RESET}"
         run_with_log git diff --compact-summary
 
-        console-log "\n${BLUE}🔧 Starting system rebuild...${RESET}"
+        console-log "\n\${BLUE}🔧 Starting system rebuild...\${RESET}"
         run_with_log sudo -v
-        run_with_log sudo nixos-rebuild switch --flake "$nix_dir"
-        rebuild_status=$?
+        run_with_log sudo nixos-rebuild switch --flake "\${nix_dir}"
+        rebuild_status=\$?
 
-        if [[ $rebuild_status -ne 0 ]]; then
-          echo "${RED}❌ Rebuild failed.${RESET}" | tee "$error_log"
-          stats_errors=$(grep -Ei -A 1 'error|failed' "$build_log" | tee -a "$error_log" | wc -l)
-          stats_last_error_lines=$(tail -n 10 "$error_log")
-          git add "$log_dir"
+        if [[ \${rebuild_status} -ne 0 ]]; then
+          echo "\${RED}❌ Rebuild failed.\${RESET}" | tee "\${error_log}"
+          stats_errors=\$(grep -Ei -A 1 'error|failed' "\${build_log}" | tee -a "\${error_log}" | wc -l)
+          stats_last_error_lines=\$(tail -n 10 "\${error_log}")
+          git add "\${log_dir}"
           git commit -m "Rebuild failed: errors logged"
-          [[ "$auto_push" == "true" ]] && git push
+          [[ "\${auto_push}" == "true" ]] && git push
           exit_code=1
           return
         fi
 
         rebuild_success=true
         exit_code=0
-        gen=$(nixos-rebuild list-generations | grep True | awk '{print $1}')
-        stats_gen=$(printf "%04d" "$gen")
-        final_log="$log_dir/nixos-gen_${stats_gen}-switch-${timestamp}.log"
-        mv "$build_log" "$final_log"
-        git add -u "$final_log"
-        git commit -m "Rebuild: $gen" || true
-        [[ "$auto_push" == "true" ]] && git push
-        echo "${GREEN}🎉 Rebuild complete.${RESET}"
+        gen=\$(nixos-rebuild list-generations | grep True | awk '{print \$1}')
+        stats_gen=\$(printf "%04d" "\${gen}")
+        final_log="\${log_dir}/nixos-gen_\${stats_gen}-switch-\${timestamp}.log"
+        mv "\${build_log}" "\${final_log}"
+        git add -u "\${final_log}"
+        git commit -m "Rebuild: \${gen}" || true
+        [[ "\${auto_push}" == "true" ]] && git push
+        echo "\${GREEN}🎉 Rebuild complete.\${RESET}"
       '')
     ]
     ++ lib.optional (cfg.enableFormatting && cfg.formatter == "alejandra") pkgs.alejandra;
