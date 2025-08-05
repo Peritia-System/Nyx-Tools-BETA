@@ -48,7 +48,7 @@ function nyx-cleanup() {
 
   ##### 📘 TOOL INFO #####
   print_line
-  nix-tool "Nyx" "nyx-cleanup" "$version" \
+  nyx-tool "Nyx" "nyx-cleanup" "$version" \
     "Smart NixOS configuration cleanup" \
     "by Peritia-System" \
     "https://github.com/Peritia-System/Nyx-Tools" \
