@@ -12,7 +12,7 @@ in {
     };
 
     logDir = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str;
       default = ./.nyx/nyx-cleanup/logs;
       description = "Directory for storing cleanup logs.";
     };
