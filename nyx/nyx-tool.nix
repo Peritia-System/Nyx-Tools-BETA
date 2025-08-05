@@ -72,7 +72,7 @@ nyx-tool() {
   echo ""
 
   }
-  nyx-tool $@
+  nyx-tool "$@"
         '')
       ];
   };

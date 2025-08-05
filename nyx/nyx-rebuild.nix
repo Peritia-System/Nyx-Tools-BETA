@@ -66,7 +66,7 @@ in
    
 
 #!/usr/bin/env bash
-
+nyx-rebuild () {
 set -euo pipefail
 
 # === CONFIGURATION ===
@@ -79,7 +79,6 @@ auto_push="${toString cfg.autoPush}"
 version="beta-2.0.0"
 
 # === INITIAL SETUP ===
-version="1.3.0"
 start_time=$(date +%s)
 start_human=$(date '+%Y-%m-%d %H:%M:%S')
 stats_duration=0
@@ -275,7 +274,10 @@ fi
 
 echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
 finish_nyx_rebuild
-
+  }
+  
+  
+nyx-rebuild 
 
    
         '')

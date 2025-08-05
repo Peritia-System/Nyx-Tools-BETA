@@ -1,4 +1,4 @@
- #!/usr/bin/env bash
+#!/usr/bin/env bash
 nyx-rebuild () {
 set -euo pipefail
 
@@ -209,3 +209,4 @@ echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
   finish_nyx_rebuild
   #return $exit_code
 }
+nyx-rebuild 
