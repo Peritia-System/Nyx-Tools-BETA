@@ -104,9 +104,13 @@ in
             echo -e "$@" | tee -a "$build_log"
           }
 
-          print_line() {
-            console-log "${BOLD}$(printf '%*s\n' \"\${COLUMNS:-40}\" '' | tr ' ' '=')${RESET}"
-          }
+            print_line() {
+              console-log "\n"
+              console-log "${BOLD}==================================================${RESET}"
+              console-log "\n"
+            
+            }
+
 
           run_with_log() {
             local cmd_output
