@@ -249,10 +249,12 @@ rebuild_status=$?
 if [[ $rebuild_status -ne 0 ]]; then
   echo "''${RED}❌ Rebuild failed at $(date).''${RESET}" > "$error_log"
   stats_errors=$(grep -Ei -A 1 'error|failed' "$build_log" | tee -a "$error_log" | wc -l)
-  stats_last_error_lines=$(tail -n 10 "$error_log")
+  stats_last_error_lines=$(tail -n 10 "$error_log") 
+  cd "$log_dir"
   $git_bin add "$log_dir"
   $git_bin commit -m "chore(rebuild): failed rebuild on $(date)" || true
   [[ "$auto_push_nixdir" == "true" ]] && (cd "$nix_dir" && $git_bin push || true)
+  cd "$nix_dir"
   return 1
 fi
 
@@ -265,19 +267,20 @@ finish_nyx_rebuild >> "$build_log"
 $git_bin add -u
 $git_bin commit -m "Rebuild: $gen" || true
 
+cd "$log_dir"
 final_log="$log_dir/nixos-gen_''${stats_gen}-switch-''${timestamp}.log"
 mv "$build_log" "$final_log"
 $git_bin add "$final_log"
 $git_bin commit -m "log for $gen" || true
 
 # === FINAL PUSH LOGS ===
-cd "$log_dir"
 $git_bin add "$final_log"
 $git_bin commit -m "chore(rebuild): successful rebuild on $(date)" || true
 
 if [[ "$auto_push_log" == "true" ]]; then
   (cd "$repo_dir" && $git_bin push || true)
 fi
+cd "$nix_dir"
 
 echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
 }

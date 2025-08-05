@@ -302,18 +302,3 @@ fi
 print_line
 console-log "''${GREEN}''${BOLD}✅ NixOS rebuild complete!''${RESET}"
 
-# === LOG + GIT FINALIZATION ===
-cd $log_dir
-$git_bin add "$build_log"
-$git_bin commit -m "chore(rebuild): successful rebuild on $(date)" || true
-
-if [[ "$auto_push_log" == "true" ]]; then
-  (
-    cd "$repo_dir"
-    if $git_bin remote | grep -q .; then
-      $git_bin push && echo "''${GREEN}✅ Logs pushed to remote.''${RESET}"
-    else
-       echo "''${YELLOW}⚠️ No Git remote configured for logs repo.''${RESET}"
-    fi
-  )
-fi
