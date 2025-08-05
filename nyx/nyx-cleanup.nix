@@ -45,7 +45,7 @@ in {
         set -euo pipefail
 
         # === CONFIGURATION ===
-        log_dir="${cfg.logDir}"
+        log_dir="${toString cfg.logDir}"
         keep_generations=${toString cfg.keepGenerations}
         auto_push=${if cfg.autoPush then "true" else "false"}
         git_bin="${pkgs.git}/bin/git"
