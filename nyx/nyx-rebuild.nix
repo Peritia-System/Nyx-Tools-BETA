@@ -74,7 +74,7 @@ in
     home.packages = [
       # Add formatter if selected
       ] ++ lib.optional (cfg.enableFormatting && cfg.formatter == "alejandra") pkgs.alejandra
-        ++ pkgs.nom
+        ++ [ pkgs.nom ]
         ++ [
           # Main script
           (pkgs.writeShellScriptBin "nyx-rebuild" ''
