@@ -2,8 +2,11 @@
 
 let
   cfg = config.nyx.nyx-cleanup;
-  logDirDefault = "${nixDirStr}/Misc/nyx/logs";
-in {
+  nixDirStr = toString cfg.nixDirectory;
+  logDirDefault = "/home/${username}/.nyx/nyx-cleanup/logs";
+in 
+
+{
   options.nyx.nyx-cleanup = {
     enable = lib.mkEnableOption "Enable nyx-cleanup script";
 
