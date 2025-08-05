@@ -13,7 +13,7 @@ in {
 
     logDir = lib.mkOption {
       type = lib.types.str;
-      default = ./.nyx/nyx-cleanup/logs;
+      default = "./.nyx/nyx-cleanup/logs";
       description = "Directory for storing cleanup logs.";
     };
 
@@ -45,7 +45,7 @@ in {
         set -euo pipefail
 
         # === CONFIGURATION ===
-        log_dir="${cfg.logDir}"
+        log_dir="${toString cfg.logDir}"
         keep_generations=${toString cfg.keepGenerations}
         auto_push=${if cfg.autoPush then "true" else "false"}
         git_bin="${pkgs.git}/bin/git"
