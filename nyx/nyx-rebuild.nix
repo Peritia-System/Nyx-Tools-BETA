@@ -105,8 +105,8 @@ in
           }
 
           print_line() {
-            console-log "${BOLD}$(printf '%*s\n' "${COLUMNS:-40}" '' | tr ' ' '=')${RESET}"
-          }
+            console-log "${BOLD}$(printf '%*s\n' \"\${COLUMNS:-40}\" '' | tr ' ' '=')${RESET}"
+        }
 
           run_with_log() {
             local cmd_output
