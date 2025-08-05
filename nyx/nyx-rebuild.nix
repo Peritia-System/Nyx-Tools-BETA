@@ -2,7 +2,9 @@
 
 let
   cfg = config.nyx.nyx-rebuild;
+  nixDir = toString cfg.nixDirectory;
 in
+
 {
   options.nyx.nyx-rebuild = {
     enable = lib.mkEnableOption "Enable nyx-rebuild script";
@@ -64,7 +66,7 @@ in
           #!/usr/bin/env bash
           set -euo pipefail
 
-          nix_dir="${nixDirectory}"
+          nix_dir="${nixDir}"
           start_editor="${toString cfg.startEditor}"
           enable_formatting="${toString cfg.enableFormatting}"
           editor_cmd="${cfg.editor}"
