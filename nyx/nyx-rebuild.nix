@@ -117,7 +117,6 @@ fi
 
 # === LOGGING SETUP ===
 hostname=$(hostname)
-log_dir="$nix_dir/Misc/nyx/logs/$hostname"
 mkdir -p "$log_dir"
 timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
 build_log="$log_dir/build-''${timestamp}.log"
