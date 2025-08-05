@@ -87,19 +87,18 @@ Nyx-Tools
 ### 3. Enable Desired Modules
 
 ```nix
-# home.nix
 {
-  modules.nyx-rebuild = {
+  nyx.nyx-rebuild = {
     enable = true;
     inherit username nixDirectory;
   };
-
-  modules.nyx-cleanup = {
+  
+  nyx.nyx-cleanup = {
     enable = true;
     inherit username nixDirectory;
   };
-
-  modules.nyx-tool = {
+  
+  nyx.nyx-tool = {
     enable = true;
     inherit nixDirectory;
   };
@@ -166,7 +165,7 @@ You're welcome to contribute:
 
 Open an issue or pull request at:
 
-👉 [https://github.com/Peritia-System/Nyx-Tools-BETA](https://github.com/Peritia-System/Nyx-Tools-BETA)
+👉 [https://github.com/Peritia-System/Nyx-Tools](https://github.com/Peritia-System/Nyx-Tools)
 
 ---
 
