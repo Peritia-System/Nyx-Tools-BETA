@@ -1,11 +1,11 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.modules.nyx-cleanup;
+  cfg = config.nyx.nyx-cleanup;
   scriptTargetPath = "${cfg.nixDirectory}/Misc/Nyx-Tools/zsh/nyx-cleanup.zsh";
 in
 {
-  options.modules.nyx-cleanup = {
+  options.nyx.nyx-cleanup = {
     enable = lib.mkEnableOption "Enable nyx-cleanup Zsh function and Zsh shell";
 
     username = lib.mkOption {

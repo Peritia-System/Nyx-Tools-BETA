@@ -1,11 +1,11 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.modules.nyx-rebuild;
+  cfg = config.nyx.nyx-rebuild;
   scriptTargetPath = "${cfg.nixDirectory}/Misc/Nyx-Tools/zsh/nyx-rebuild.zsh";
 in
 {
-  options.modules.nyx-rebuild = {
+  options.nyx.nyx-rebuild = {
     enable = lib.mkEnableOption "Enable nyx-rebuild Zsh function and Zsh shell";
 
     username = lib.mkOption {
