@@ -2,6 +2,7 @@
 
 let
   cfg = config.nyx.nyx-cleanup;
+  logDirDefault = "${nixDirStr}/Misc/nyx/logs";
 in {
   options.nyx.nyx-cleanup = {
     enable = lib.mkEnableOption "Enable nyx-cleanup script";
@@ -11,12 +12,17 @@ in {
       description = "The user this module applies to.";
     };
 
+    nixDirectory = lib.mkOption {
+      type = lib.types.path;
+      description = "Path to NixOS flake configuration.";
+    };
+    
     logDir = lib.mkOption {
       type = lib.types.str;
-      default = "./.nyx/nyx-cleanup/logs";
+      default = logDirDefault;
       description = "Directory for storing cleanup logs.";
     };
-
+    
     keepGenerations = lib.mkOption {
       type = lib.types.int;
       default = 5;
