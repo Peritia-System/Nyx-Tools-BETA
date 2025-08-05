@@ -145,19 +145,17 @@ run_with_log() {
   rm "$cmd_output"
   return "$status"
 }
-
-run_with_log_rebuild() {
-  local cmd_output
-  cmd_output=$(mktemp)
-  (
-    "$@" 2>&1
-    echo $? > "$cmd_output"
-  ) | tee -a "$build_log" | $nom_bin
-  local status
-  status=$(<"$cmd_output")
-  rm "$cmd_output"
-  return "$status"
-}
+ run_with_log_rebuild() {
+    local cmd_output
+    cmd_output=$(mktemp)
+    (
+      "$@" 2>&1
+      echo $? > "$cmd_output"
+    ) | tee -a "$build_log" | $nom_bin
+    local status=$(<"$cmd_output")
+    rm "$cmd_output"
+    return "$status"
+  }
 
 finish_nyx_rebuild() {
   stats_duration=$(( $(date +%s) - start_time ))
@@ -234,7 +232,6 @@ run_with_log $git_bin diff --compact-summary
 # === SYSTEM REBUILD ===
 print_line
 console-log "''${BLUE}''${BOLD}🔧 Starting system rebuild...''${RESET}"
-print_line
 console-log "🛠️  Removing old HM conf"
 run_with_log find ~ -type f -name '*delme-HMbackup' -exec rm -v {} +
 print_line
@@ -242,7 +239,7 @@ console-log "Getting sudo ticket"
 run_with_log sudo whoami > /dev/null
 print_line
 console-log "🛠️  Rebuild started: $(date)"
-print_line
+
 
 run_with_log_rebuild sudo nixos-rebuild switch --flake "$nix_dir"
 rebuild_status=$?

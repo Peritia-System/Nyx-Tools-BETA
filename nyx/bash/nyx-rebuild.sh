@@ -197,20 +197,59 @@ if [[ $rebuild_status -ne 0 ]]; then
   stats_errors=$(grep -Ei -A 1 'error|failed' "$build_log" | tee -a "$error_log" | wc -l)
   stats_last_error_lines=$(tail -n 10 "$error_log")
   git add "$log_dir"
-  $git_bin commit -m "chore(rebuild): failed rebuild on $(date)" || true
-          if [[ "$auto_push_nixdir" == "true" ]]; then
-            (
-              cd "$nix_dir"
-              if $git_bin remote | grep -q .; then
-                $git_bin push && console-log "''${GREEN}✅ Nix config pushed to remote.''${RESET}"
-              else
-                console-log "''${YELLOW}⚠️ No Git remote configured in nixDirectory.''${RESET}"
-              fi
-            )
-          fi
+  git commit -m "Rebuild failed: errors logged"
+  if [[ "$auto_push" == "true" ]]; then
+    run_with_log git push && console-log "''${GREEN}✅ Error log pushed to remote.''${RESET}"
+  fi
   exit_code=1
   return $exit_code
 fi
+
+# === SUCCESS FLOW ===
+rebuild_success=true
+exit_code=0
+
+gen=$(nixos-rebuild list-generations | grep True | awk '{$1=$1};1')
+stats_gen=$(echo "$gen" | awk '{printf "%04d\n", $1}')
+finish_nyx_rebuild >> "$build_log"
+
+git add -u
+if ! git diff --cached --quiet; then
+  git commit -m "Rebuild: $gen"
+  console-log "''${BLUE}🔧 Commit message:''${RESET}\n''${GREEN}Rebuild: $gen''${RESET}"
+fi
+
+final_log="$log_dir/nixos-gen_''${stats_gen}-switch-''${timestamp}.log"
+mv "$build_log" "$final_log"
+git add "$final_log"
+
+if ! git diff --cached --quiet; then
+  git commit -m "log for $gen"
+  echo "''${YELLOW}ℹ️  Added changes to git''${RESET}"
+else
+  echo "''${YELLOW}ℹ️  No changes in logs to commit.''${RESET}"
+fi
+
+if [[ "$auto_push" == "true" ]]; then
+  git push && echo "''${GREEN}✅ Changes pushed to remote.''${RESET}"
+fi
+
+echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
+  finish_nyx_rebuild
+  #return $exit_code
+}
+nyx-rebuild 
+
+
+
+
+
+
+
+
+
+
+
 
 
 # === SUCCESS FLOW ===
@@ -238,6 +277,30 @@ else
   echo "''${YELLOW}ℹ️  No changes in logs to commit.''${RESET}"
 fi
 
+echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
+  finish_nyx_rebuild
+
+
+
+if [[ $? -ne 0 ]]; then
+  console-log "''${RED}''${BOLD}❌ Rebuild failed. See log: $build_log''${RESET}"
+  $git_bin add "$build_log"
+  $git_bin commit -m "chore(rebuild): failed rebuild on $(date)" || true
+          if [[ "$auto_push_nixdir" == "true" ]]; then
+            (
+              cd "$nix_dir"
+              if $git_bin remote | grep -q .; then
+                $git_bin push && console-log "''${GREEN}✅ Nix config pushed to remote.''${RESET}"
+              else
+                console-log "''${YELLOW}⚠️ No Git remote configured in nixDirectory.''${RESET}"
+              fi
+            )
+          fi
+  exit 1
+fi
+
+print_line
+console-log "''${GREEN}''${BOLD}✅ NixOS rebuild complete!''${RESET}"
 
 # === LOG + GIT FINALIZATION ===
 cd $log_dir
@@ -254,25 +317,3 @@ if [[ "$auto_push_log" == "true" ]]; then
     fi
   )
 fi
-
-echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
-  finish_nyx_rebuild
-cd "$nix_dir" || { exit_code=1; return $exit_code; }
-
-
-}
-nyx-rebuild 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
