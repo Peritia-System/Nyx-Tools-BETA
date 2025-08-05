@@ -21,7 +21,7 @@ in
     ++ [
       (pkgs.writeShellScriptBin "nyx-tool" ''
 #!/usr/bin/env bash
-
+nyx-tool() {
 # nyx-tool: reusable metadata banner printer with Base16 theme
   local logo="''${1:-Nyx}"
   local name="''${2:-nix-script}"
@@ -70,6 +70,9 @@ in
   echo ""
   echo -e "''${LABEL}📌 Message:       ''${BOLD}''${message}''${RESET}"
   echo ""
+
+  }
+  nyx-tool $@
         '')
       ];
   };

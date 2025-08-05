@@ -1,5 +1,5 @@
  #!/usr/bin/env bash
-
+nyx-rebuild () {
 set -euo pipefail
 
 # === CONFIGURATION ===
@@ -208,3 +208,4 @@ fi
 echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
   finish_nyx_rebuild
   #return $exit_code
+}
