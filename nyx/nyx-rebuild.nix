@@ -3,9 +3,8 @@
 let
   cfg = config.nyx.nyx-rebuild;
   nixDirStr = toString cfg.nixDirectory;
-  logDirDefault = "/home/${toString cfg.username}/.nyx/nyx-rebuild/logs";
+  logDirDefault = "/home/${cfg.username}/.nyx/nyx-rebuild/logs";
 in
-
 {
   options.nyx.nyx-rebuild = {
     enable = lib.mkEnableOption "Enable nyx-rebuild script";
@@ -19,11 +18,13 @@ in
       type = lib.types.path;
       description = "Path to NixOS flake configuration.";
     };
+
     logDir = lib.mkOption {
       type = lib.types.str;
       default = logDirDefault;
       description = "Directory for storing cleanup logs.";
     };
+
     editor = lib.mkOption {
       type = lib.types.str;
       default = "nvim";
@@ -51,15 +52,14 @@ in
     autoPushLog = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "If true, automatically push Git commits containing rebuild logs.";
+      description = "If true, automatically push $git_bin commits containing rebuild logs.";
     };
 
     autoPushNixDir = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "If true, push Git commits in nixDirectory (configuration repo) after rebuild.";
+      description = "If true, push $git_bin commits in nixDirectory (configuration repo) after rebuild.";
     };
-
 
     enableAlias = lib.mkOption {
       type = lib.types.bool;
@@ -71,11 +71,14 @@ in
   config = lib.mkIf cfg.enable {
     programs.zsh.enable = lib.mkDefault true;
 
-    home.packages =
-      (lib.optional (cfg.enableFormatting && cfg.formatter == "alejandra") pkgs.alejandra)
-      ++ [
-        (pkgs.writeShellScriptBin "nyx-rebuild" ''
+    home.packages = [
+      # Add formatter if selected
+      ] ++ lib.optional (cfg.enableFormatting && cfg.formatter == "alejandra") pkgs.alejandra
+        ++ [
+          # Main script
+          (pkgs.writeShellScriptBin "nyx-rebuild" ''
 #!/usr/bin/env bash
+nyx-rebuild () {
 set -euo pipefail
 
 # === CONFIGURATION ===
@@ -88,12 +91,18 @@ formatter_cmd="${cfg.formatter}"
 auto_push_log="${if cfg.autoPushLog then "true" else "false"}"
 auto_push_nixdir="${if cfg.autoPushNixDir then "true" else "false"}"
 git_bin="${pkgs.git}/bin/git"
+nom_bin="${pkgs.nom}/bin/nom"
 
 # === INITIAL SETUP ===
-mkdir -p "$log_dir"
-timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
-build_log="$log_dir/rebuild-''${timestamp}.log"
-repo_dir="$(dirname "$(dirname "$log_dir")")"
+version="beta-2.0.0"  
+start_time=$(date +%s)
+start_human=$(date '+%Y-%m-%d %H:%M:%S')
+stats_duration=0
+stats_gen="?"
+stats_errors=0
+stats_last_error_lines=""
+rebuild_success=false
+exit_code=1
 
 # === COLORS ===
 if [[ -t 1 ]]; then
@@ -101,11 +110,20 @@ if [[ -t 1 ]]; then
   BLUE=$'\e[34m'; MAGENTA=$'\e[35m'; CYAN=$'\e[36m'
   BOLD=$'\e[1m'; RESET=$'\e[0m'
 else
-  RED=""; GREEN=""; YELLOW=""; BLUE=""; MAGENTA=""
-  CYAN=""; BOLD=""; RESET=""
+  RED=""; GREEN=""; YELLOW=""
+  BLUE=""; MAGENTA=""; CYAN=""
+  BOLD=""; RESET=""
 fi
 
-# === LOGGING ===
+# === LOGGING SETUP ===
+hostname=$(hostname)
+log_dir="$nix_dir/Misc/nyx/logs/$hostname"
+mkdir -p "$log_dir"
+timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
+build_log="$log_dir/build-''${timestamp}.log"
+error_log="$log_dir/Current-Error-''${timestamp}.txt"
+
+# === HELPERS ===
 console-log() {
   echo -e "$@" | tee -a "$build_log"
 }
@@ -116,76 +134,158 @@ print_line() {
   console-log ""
 }
 
+run_with_log() {
+  local cmd_output
+  cmd_output=$(mktemp)
+  (
+    "$@" 2>&1
+    echo $? > "$cmd_output"
+  ) | tee -a "$build_log"
+  local status
+  status=$(<"$cmd_output")
+  rm "$cmd_output"
+  return "$status"
+}
+
+run_with_log_rebuild() {
+  local cmd_output
+  cmd_output=$(mktemp)
+  (
+    "$@" 2>&1
+    echo $? > "$cmd_output"
+  ) | tee -a "$build_log" | $nom_bin
+  local status
+  status=$(<"$cmd_output")
+  rm "$cmd_output"
+  return "$status"
+}
+
+finish_nyx_rebuild() {
+  stats_duration=$(( $(date +%s) - start_time ))
+  echo
+  if [[ "$rebuild_success" == true ]]; then
+    echo "''${GREEN}''${BOLD}
+##############################
+# ✅ NixOS Rebuild Complete! #
+##############################''${RESET}"
+    echo "''${BOLD}''${CYAN}🎯 Success Stats:''${RESET}"
+    echo "  🕒 Started:   $start_human"
+    echo "  ⏱️  Duration: ''${stats_duration} sec"
+    echo "  📦 Gen:       $stats_gen"
+  else
+    echo "''${RED}''${BOLD}
+##############################
+# ❌ NixOS Rebuild Failed!   #
+##############################''${RESET}"
+    echo "''${BOLD}''${RED}🚨 Error Stats:''${RESET}"
+    echo "  🕒 Started:   $start_human"
+    echo "  ⏱️  Duration: ''${stats_duration} sec"
+    echo "  ❌ Error lines: ''${stats_errors}"
+    [[ -n "$stats_last_error_lines" ]] && echo -e "\n''${YELLOW}🧾 Last few errors:''${RESET}\n$stats_last_error_lines"
+  fi
+}
+
+trap finish_nyx_rebuild EXIT
+
+# === TOOL INFO ===
+echo
+nyx-tool "Nyx" "nyx-rebuild" "$version" \
+  "Smart NixOS configuration rebuilder" \
+  "by Peritia-System" \
+  "https://github.com/Peritia-System/Nyx-Tools" \
+  "https://github.com/Peritia-System/Nyx-Tools/issues" \
+  "Always up to date for you!"
+echo
+
+# === PROJECT PREP ===
+cd "$nix_dir" || { exit_code=1; return $exit_code; }
+
+# === CHECK FOR UNCOMMITTED CHANGES ===
+console-log "\n''${BOLD}''${BLUE}📁 Checking $git_bin status...''${RESET}"
+if [[ -n $($git_bin status --porcelain) ]]; then
+  echo "''${YELLOW}⚠️  Uncommitted changes detected!''${RESET}"
+  echo "''${RED}⏳ 5s to cancel...''${RESET}"
+  sleep 5
+fi
+
 # === SCRIPT START ===
 print_line
 console-log "''${BLUE}''${BOLD}🚀 Starting Nyx Rebuild...''${RESET}"
 
-cd "$nix_dir"
+# === GIT PULL ===
+console-log "\n''${BOLD}''${BLUE}⬇️  Pulling latest changes...''${RESET}"
+run_with_log $git_bin pull --rebase || return 1
 
-console-log "''${CYAN}''${BOLD}🔍 Checking Git status...''${RESET}"
-if [[ -n $($git_bin status --porcelain) ]]; then
-  console-log "''${YELLOW}⚠️  You have uncommitted changes. Pausing 5s...''${RESET}"
-  sleep 5
-fi
-
-console-log "''${CYAN}''${BOLD}⬇️  Pulling latest changes...''${RESET}"
-$git_bin pull --rebase | tee -a "$build_log"
-
+# === OPTIONAL: OPEN EDITOR ===
 if [[ "$start_editor" == "true" ]]; then
-  print_line
-  console-log "''${MAGENTA}''${BOLD}📝 Launching editor...''${RESET}"
-  "$editor_cmd"
+  console-log "\n''${BOLD}''${BLUE}📝 Editing configuration...''${RESET}"
+  run_with_log "$editor_cmd"
 fi
 
+# === OPTIONAL: FORMAT FILES ===
 if [[ "$enable_formatting" == "true" ]]; then
-  print_line
-  console-log "''${MAGENTA}''${BOLD}🎨 Formatting files...''${RESET}"
-  "$formatter_cmd" . | tee -a "$build_log"
+  console-log "\n''${BOLD}''${MAGENTA}🎨 Running formatter...''${RESET}"
+  run_with_log "$formatter_cmd" .
 fi
 
-print_line
-console-log "''${CYAN}''${BOLD}🛠️ Rebuilding system with flake...''${RESET}"
-sudo nixos-rebuild switch --flake "$nix_dir" | tee -a "$build_log"
+# === GIT DIFF ===
+console-log "\n''${BOLD}''${CYAN}🔍 Changes summary:''${RESET}"
+run_with_log $git_bin diff --compact-summary
 
-if [[ $? -ne 0 ]]; then
-  console-log "''${RED}''${BOLD}❌ Rebuild failed. See log: $build_log''${RESET}"
-  $git_bin add "$build_log"
+# === SYSTEM REBUILD ===
+print_line
+console-log "''${BLUE}''${BOLD}🔧 Starting system rebuild...''${RESET}"
+print_line
+console-log "🛠️  Removing old HM conf"
+run_with_log find ~ -type f -name '*delme-HMbackup' -exec rm -v {} +
+print_line
+console-log "Getting sudo ticket"
+run_with_log sudo whoami > /dev/null
+print_line
+console-log "🛠️  Rebuild started: $(date)"
+print_line
+
+run_with_log_rebuild sudo nixos-rebuild switch --flake "$nix_dir"
+rebuild_status=$?
+
+if [[ $rebuild_status -ne 0 ]]; then
+  echo "''${RED}❌ Rebuild failed at $(date).''${RESET}" > "$error_log"
+  stats_errors=$(grep -Ei -A 1 'error|failed' "$build_log" | tee -a "$error_log" | wc -l)
+  stats_last_error_lines=$(tail -n 10 "$error_log")
+  $git_bin add "$log_dir"
   $git_bin commit -m "chore(rebuild): failed rebuild on $(date)" || true
-          if [[ "$auto_push_nixdir" == "true" ]]; then
-            (
-              cd "$nix_dir"
-              if $git_bin remote | grep -q .; then
-                $git_bin push && console-log "''${GREEN}✅ Nix config pushed to remote.''${RESET}"
-              else
-                console-log "''${YELLOW}⚠️ No Git remote configured in nixDirectory.''${RESET}"
-              fi
-            )
-          fi
-  exit 1
+  [[ "$auto_push_nixdir" == "true" ]] && (cd "$nix_dir" && $git_bin push || true)
+  return 1
 fi
 
-print_line
-console-log "''${GREEN}''${BOLD}✅ NixOS rebuild complete!''${RESET}"
+# === SUCCESS FLOW ===
+rebuild_success=true
+gen=$(nixos-rebuild list-generations | grep True | awk '{$1=$1};1')
+stats_gen=$(echo "$gen" | awk '{printf "%04d\n", $1}')
+finish_nyx_rebuild >> "$build_log"
 
-# === LOG + GIT FINALIZATION ===
-cd $log_dir
-$git_bin add "$build_log"
+$git_bin add -u
+$git_bin commit -m "Rebuild: $gen" || true
+
+final_log="$log_dir/nixos-gen_''${stats_gen}-switch-''${timestamp}.log"
+mv "$build_log" "$final_log"
+$git_bin add "$final_log"
+$git_bin commit -m "log for $gen" || true
+
+# === FINAL PUSH LOGS ===
+cd "$log_dir"
+$git_bin add "$final_log"
 $git_bin commit -m "chore(rebuild): successful rebuild on $(date)" || true
 
 if [[ "$auto_push_log" == "true" ]]; then
-  (
-    cd "$repo_dir"
-    if $git_bin remote | grep -q .; then
-      $git_bin push && echo "''${GREEN}✅ Logs pushed to remote.''${RESET}"
-    else
-       echo "''${YELLOW}⚠️ No Git remote configured for logs repo.''${RESET}"
-    fi
-  )
+  (cd "$repo_dir" && $git_bin push || true)
 fi
 
-
-        '')
-      ];
+echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
+}
+nyx-rebuild
+          '')
+        ];
 
     home.shellAliases = lib.mkIf cfg.enableAlias {
       nr = "nyx-rebuild";

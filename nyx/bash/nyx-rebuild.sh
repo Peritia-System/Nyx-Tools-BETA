@@ -3,12 +3,15 @@ nyx-rebuild () {
 set -euo pipefail
 
 # === CONFIGURATION ===
-nix_dir="''${NIX_DIR:-$HOME/Nix}"  # override with env var
-start_editor="''${START_EDITOR:-false}"
-enable_formatting="''${ENABLE_FORMATTING:-false}"
-editor_cmd="''${EDITOR_CMD:-nvim}"
-formatter_cmd="''${FORMATTER_CMD:-alejandra}"
-auto_push="''${AUTO_PUSH:-false}"
+nix_dir="${nixDirStr}"
+log_dir="${toString cfg.logDir}"
+start_editor="${if cfg.startEditor then "true" else "false"}"
+enable_formatting="${if cfg.enableFormatting then "true" else "false"}"
+editor_cmd="${cfg.editor}"
+formatter_cmd="${cfg.formatter}"
+auto_push_log="${if cfg.autoPushLog then "true" else "false"}"
+auto_push_nixdir="${if cfg.autoPushNixDir then "true" else "false"}"
+git_bin="${pkgs.git}/bin/git"
 
 # === INITIAL SETUP ===
 start_time=$(date +%s)
@@ -44,11 +47,18 @@ console-log() {
   echo -e "$@" | tee -a "$build_log"
 }
 
-  print_line() {
-    console-log "\n"
-    console-log "''${BOLD}==================================================''''${RESET}"
-    console-log "\n"
-  }
+
+# === LOGGING ===
+console-log() {
+  echo -e "$@" | tee -a "$build_log"
+}
+
+print_line() {
+  console-log ""
+  console-log "''${BOLD}==================================================''${RESET}"
+  console-log ""
+}
+
 
 run_with_log() {
   local cmd_output
@@ -104,6 +114,7 @@ finish_nyx_rebuild() {
 trap finish_nyx_rebuild EXIT
 
 # === TOOL INFO ===
+
 echo
 nyx-tool "Nyx" "nyx-rebuild" "$version" \
   "Smart NixOS configuration rebuilder" \
@@ -113,8 +124,16 @@ nyx-tool "Nyx" "nyx-rebuild" "$version" \
   "Always up to date for you!"
 echo
 
+# === INITIAL SETUP ===
+mkdir -p "$log_dir"
+timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
+build_log="$log_dir/rebuild-''${timestamp}.log"
+repo_dir="$(dirname "$(dirname "$log_dir")")"
+
+
 # === PROJECT PREP ===
 cd "$nix_dir" || { exit_code=1; return $exit_code; }
+
 
 console-log "\n''${BOLD}''${BLUE}📁 Checking Git status...''${RESET}"
 if [[ -n $(git status --porcelain) ]]; then
@@ -123,9 +142,13 @@ if [[ -n $(git status --porcelain) ]]; then
   sleep 5
 fi
 
+# === SCRIPT START ===
+print_line
+console-log "''${BLUE}''${BOLD}🚀 Starting Nyx Rebuild...''${RESET}"
+
 # === GIT PULL ===
 console-log "\n''${BOLD}''${BLUE}⬇️  Pulling latest changes...''${RESET}"
-if ! run_with_log git pull --rebase; then
+if ! run_with_log $git_bin --rebase; then
   exit_code=1; return $exit_code
 fi
 
@@ -162,18 +185,33 @@ print_line
 run_with_log_rebuild sudo nixos-rebuild switch --flake "$nix_dir"
 rebuild_status=$?
 
+
+
+
+
+
+
+
 if [[ $rebuild_status -ne 0 ]]; then
   echo "''${RED}❌ Rebuild failed at $(date).''${RESET}" > "$error_log"
   stats_errors=$(grep -Ei -A 1 'error|failed' "$build_log" | tee -a "$error_log" | wc -l)
   stats_last_error_lines=$(tail -n 10 "$error_log")
   git add "$log_dir"
-  git commit -m "Rebuild failed: errors logged"
-  if [[ "$auto_push" == "true" ]]; then
-    run_with_log git push && console-log "''${GREEN}✅ Error log pushed to remote.''${RESET}"
-  fi
+  $git_bin commit -m "chore(rebuild): failed rebuild on $(date)" || true
+          if [[ "$auto_push_nixdir" == "true" ]]; then
+            (
+              cd "$nix_dir"
+              if $git_bin remote | grep -q .; then
+                $git_bin push && console-log "''${GREEN}✅ Nix config pushed to remote.''${RESET}"
+              else
+                console-log "''${YELLOW}⚠️ No Git remote configured in nixDirectory.''${RESET}"
+              fi
+            )
+          fi
   exit_code=1
   return $exit_code
 fi
+
 
 # === SUCCESS FLOW ===
 rebuild_success=true
@@ -200,12 +238,41 @@ else
   echo "''${YELLOW}ℹ️  No changes in logs to commit.''${RESET}"
 fi
 
-if [[ "$auto_push" == "true" ]]; then
-  git push && echo "''${GREEN}✅ Changes pushed to remote.''${RESET}"
+
+# === LOG + GIT FINALIZATION ===
+cd $log_dir
+$git_bin add "$build_log"
+$git_bin commit -m "chore(rebuild): successful rebuild on $(date)" || true
+
+if [[ "$auto_push_log" == "true" ]]; then
+  (
+    cd "$repo_dir"
+    if $git_bin remote | grep -q .; then
+      $git_bin push && echo "''${GREEN}✅ Logs pushed to remote.''${RESET}"
+    else
+       echo "''${YELLOW}⚠️ No Git remote configured for logs repo.''${RESET}"
+    fi
+  )
 fi
 
 echo -e "\n''${GREEN}🎉 Nyx rebuild completed successfully!''${RESET}"
   finish_nyx_rebuild
-  #return $exit_code
+cd "$nix_dir" || { exit_code=1; return $exit_code; }
+
+
 }
 nyx-rebuild 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
