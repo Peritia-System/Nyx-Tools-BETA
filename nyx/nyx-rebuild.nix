@@ -74,7 +74,6 @@ in
     home.packages = [
       # Add formatter if selected
       ] ++ lib.optional (cfg.enableFormatting && cfg.formatter == "alejandra") pkgs.alejandra
-        ++ [ pkgs.nom ]
         ++ [
           # Main script
           (pkgs.writeShellScriptBin "nyx-rebuild" ''
@@ -92,6 +91,7 @@ formatter_cmd="${cfg.formatter}"
 auto_push_log="${if cfg.autoPushLog then "true" else "false"}"
 auto_push_nixdir="${if cfg.autoPushNixDir then "true" else "false"}"
 git_bin="${pkgs.git}/bin/git"
+nom_bin="${pkgs.nix-output-monitor}/bin/nom"
 
 # === INITIAL SETUP ===
 version="beta-2.0.0"  
@@ -152,7 +152,7 @@ run_with_log_rebuild() {
   (
     "$@" 2>&1
     echo $? > "$cmd_output"
-  ) | tee -a "$build_log" | nom
+  ) | tee -a "$build_log" | $nom_bin
   local status
   status=$(<"$cmd_output")
   rm "$cmd_output"
