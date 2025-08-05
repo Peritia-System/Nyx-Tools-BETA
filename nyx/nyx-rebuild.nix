@@ -152,7 +152,7 @@ run_with_log_rebuild() {
   (
     "$@" 2>&1
     echo $? > "$cmd_output"
-  ) | tee -a "$build_log" | $nom
+  ) | tee -a "$build_log" | nom
   local status
   status=$(<"$cmd_output")
   rm "$cmd_output"
