@@ -19,13 +19,11 @@ in
       type = lib.types.path;
       description = "Path to NixOS flake configuration.";
     };
-
     logDir = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str;
       default = logDirDefault;
-      description = "Where nyx-rebuild logs are stored.";
+      description = "Directory for storing cleanup logs.";
     };
-
     editor = lib.mkOption {
       type = lib.types.str;
       default = "nvim";
