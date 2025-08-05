@@ -83,8 +83,8 @@ set -euo pipefail
 # === CONFIGURATION ===
 nix_dir="${nixDirStr}"
 log_dir="${toString cfg.logDir}"
-start_editor="${cfg.startEditor}"
-enable_formatting="${cfg.enableFormatting}"
+start_editor="${if cfg.startEditor then "true" else "false"}"
+enable_formatting="${if cfg.enableFormatting then "true" else "false"}"
 editor_cmd="${cfg.editor}"
 formatter_cmd="${cfg.formatter}"
 auto_push_log="${if cfg.autoPushLog then "true" else "false"}"
