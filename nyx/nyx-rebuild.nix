@@ -157,9 +157,9 @@ if [[ $? -ne 0 ]]; then
             (
               cd "$nix_dir"
               if $git_bin remote | grep -q .; then
-                $git_bin push && console-log "${GREEN}✅ Nix config pushed to remote.${RESET}"
+                $git_bin push && console-log "''${GREEN}✅ Nix config pushed to remote.''${RESET}"
               else
-                console-log "${YELLOW}⚠️ No Git remote configured in nixDirectory.${RESET}"
+                console-log "''${YELLOW}⚠️ No Git remote configured in nixDirectory.''${RESET}"
               fi
             )
           fi
@@ -178,9 +178,9 @@ if [[ "$auto_push_log" == "true" ]]; then
   (
     cd "$repo_dir"
     if $git_bin remote | grep -q .; then
-      $git_bin push && echo "${GREEN}✅ Logs pushed to remote.${RESET}"
+      $git_bin push && echo "''${GREEN}✅ Logs pushed to remote.''${RESET}"
     else
-       echo "${YELLOW}⚠️ No Git remote configured for logs repo.${RESET}"
+       echo "''${YELLOW}⚠️ No Git remote configured for logs repo.''${RESET}"
     fi
   )
 fi
