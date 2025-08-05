@@ -64,17 +64,19 @@ in
       ++ [
         (pkgs.writeShellScriptBin "nyx-rebuild" ''
    
-   #!/usr/bin/env bash
+
+#!/usr/bin/env bash
 
 set -euo pipefail
 
 # === CONFIGURATION ===
-nix_dir="''${NIX_DIR:-$HOME/Nix}"  # override with env var
-start_editor="''${START_EDITOR:-false}"
-enable_formatting="''${ENABLE_FORMATTING:-false}"
-editor_cmd="''${EDITOR_CMD:-nvim}"
-formatter_cmd="''${FORMATTER_CMD:-alejandra}"
-auto_push="''${AUTO_PUSH:-false}"
+nix_dir="${nixDir}"
+start_editor="${toString cfg.startEditor}"
+enable_formatting="${toString cfg.enableFormatting}"
+editor_cmd="${cfg.editor}"
+formatter_cmd="${cfg.formatter}"
+auto_push="${toString cfg.autoPush}"
+version="beta-2.0.0"
 
 # === INITIAL SETUP ===
 version="1.3.0"
