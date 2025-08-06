@@ -1,3 +1,10 @@
+######################################################
+\## Check https://github.com/Peritia-System/Nyx-Tools #
+######################################################
+
+
+
+
 # ⚙️ Nyx: NixOS System Management Toolkit
 
 **Nyx** is a modular toolkit that simplifies and automates various NixOS system management tasks, from enhanced rebuilds to cleanup and shell customization.
